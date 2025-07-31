@@ -3,6 +3,6 @@
 
 #include <stm32f103xb.h>
 void estInit();
-void estMod(char modo);
-char teclado(int f1, int f2, int f3, int f4, int c1, int c2, int c3, int c4);
+int estMod(char modo);
+void teclado(int f1, int f2, int f3, int f4, int c1, int c2, int c3, int c4);
 #endif
