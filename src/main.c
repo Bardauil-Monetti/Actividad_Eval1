@@ -21,8 +21,7 @@ int main(void){
     AFIO->EXTICR[3] |=  (0x0 << (restringido * 4)); 
     AFIO->EXTICR[4] &= ~(0xF << ((libre % 4) * 4));//del EXTICR[4] en adelante, se declaran diferente a los anteriores 
     AFIO->EXTICR[4] |=  (0X2 << ((libre % 4) * 4));// 0X2 = PC (es el puerto en el que esta seteado el pin)
-
-    // If you need to map more EXTI lines, use EXTICR[2] and EXTICR[3] for lines 8-15.    
+  
 
     for(int i = 1; i < 5; i++){
         EXTI->IMR  |= (1 << i);
