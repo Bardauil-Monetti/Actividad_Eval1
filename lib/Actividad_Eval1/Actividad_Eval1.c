@@ -1,85 +1,131 @@
 #include "Actividad_Eval1.h"
 #include "stm32f103xb.h"
 #include <string.h>
+#include "ctype.h"
+#define normal 3
+#define restringido 4 
+#define libre 5
 int ledRojo = 8;
 int ledVerde = 7;
-int normal = 9;//boton
-int restringido = 10;//boton
-int libre = 11;//boton
-int sen1 = 12;
-int sen2 = 13;
-int resultado, ocupados;
+int resultado;
 int max, uni, dec, cen, input;
+volatile int ocupados;
+volatile char mode;
 char tecMat[4][4]={
     {'1', '2', '3', 'A'},
     {'4', '5', '6', 'B'},
     {'7', '8', '9', 'C'},
     {'*', '0', '#', 'D'}
 };
-int f1 = 0, f2 = 1, f3 = 2, f4 = 3;
-int c1 = 4, c2 = 5, c3 = 6, c4 = 7;
+int f[4] = {0, 1, 2, 3};
+int c[4] = {4, 5, 6, 7};
 void estInit(){
-    RCC->APB2ENR|= RCC_APB2ENR_IOPBEN ; 
-    GPIOA->CRL &= ~(0xF << (normal * 4)) | ~(0XF << (normal * 4) + 1) | ~(0XF << (normal * 4) + 2) | ~(0XF << (normal * 4) + 3);
-    GPIOC->CRL &= ~(0xF << (restringido * 4)) | ~(0XF << (restringido * 4) + 1) | ~(0XF << (restringido * 4) + 2) | ~(0XF << (restringido * 4) + 3);
-    GPIOA->CRH &= ~(0xF << (sen1 * 4)) | ~(0XF << (sen1 * 4) + 1) | ~(0XF << (sen1 * 4) + 2) | ~(0XF << (sen1 * 4) + 3);
-    GPIOC->CRH &= ~(0xF << (sen2 * 4)) | ~(0XF << (sen2 * 4) + 1) | ~(0XF << (sen2 * 4) + 2) | ~(0XF << (sen2 * 4) + 3);
-    GPIOD->CRL &= ~(0xF << (libre * 4)) | ~(0XF << (libre * 4) + 1) | ~(0XF << (libre * 4) + 2) | ~(0XF << (libre * 4) + 3);
-    GPIOB->CRL &= ~(0xF << (ledVerde * 4)) | ~(0XF << (ledVerde * 4) + 1) | ~(0XF << (ledVerde * 4) + 2) | ~(0XF << (ledVerde * 4) + 3);
-    GPIOB->CRH &= ~(0xF << (ledRojo * 4)) | ~(0XF << (ledRojo * 4) + 1) | ~(0XF << (ledRojo * 4) + 2) | ~(0XF << (ledRojo * 4) + 3);
+    RCC->APB2ENR|= RCC_APB2ENR_IOPBEN ;
+    for(int i = 0; i < 4; i++){
+        // ponemos todos los puertos que vamos a usar en 0
+        GPIOA->CRL &= ~(0XF << ((f[i] * 4)+ i));
+        GPIOA->CRH &= ~(0XF << ((c[i] * 4)+ i));
+        GPIOB->CRH &= ~(0XF << ((ledVerde * 4) + i)); 
+        GPIOB->CRL &= ~(0XF << ((ledRojo * 4) + i));
+        GPIOC->CRL &= ~(0XF << ((normal * 4) + i));
+        GPIOC->CRL &= ~(0XF << ((restringido * 4) + i));
+        GPIOC->CRL &= ~(0XF << ((libre * 4) + i));
+    } 
+    for(int i = 0; i < 4; i++){
+        GPIOA->CRH |= (0b0100 << (f[i] * 4)); //aprovechamos para setear todas las filas y columnas como entradas flotantes
+        GPIOA->CRH |= (0b0100 << (c[i] * 4));
+    }
+    GPIOC->CRL |= (0b0100 << (normal * 4)); //aprovechamos para setear todos los botones como entradas flotantes
+    GPIOC->CRL |= (0b0100 << (restringido * 4)); 
+    GPIOC->CRL |= (0b0100 << (libre * 4));
     GPIOB->CRL |= (0b0010 << (ledRojo * 4)); //salida
     GPIOB->CRH |= (0b0010 << (ledVerde * 4)); //salida
-    GPIOA->CRL |= (0b1000 << (normal * 4)); //entrada pull-down (porque me estoy fijando en el flanco de subida)
-    GPIOC->CRL |= (0b1000 << (restringido * 4)); //entrada pull-down (porque me estoy fijando en el flanco de subida)
-    GPIOA->CRH |= (0b1000 << (sen1 * 4)); //entrada pull-down (porque me estoy fijando en el flanco de subida)
-    GPIOC->CRH |= (0b1000 << (sen2 * 4)); //entrada pull-down (porque me estoy fijando en el flanco de subida)
-    GPIOD->CRL |= (0b1000 << (libre * 4)); //entrada pull-down (porque me estoy fijando en el flanco de subida)
 }
 
-char teclado(int f1, int f2, int f3, int f4, int c1, int c2, int c3, int c4){
+void teclado(int f1, int f2, int f3, int f4, int c1, int c2, int c3, int c4){
     int filas[4] = {f1, f2, f3, f4};
     int columnas[4] = {c1, c2, c3, c4};
     for(int i = 0; i < 4; i++){
         GPIOB->BSRR |= (1 << filas[i]);
-        for(int j = 0; i < 4; j++){
-            if((GPIOB->IDR & (1 << columnas[j])) == 0){
+        for(int j = 0; j < 4; j++){
+            if(GPIOB->IDR & (1 << columnas[j]) == 0){
                 switch(input){
                     case 0:
-                        uni = tecMat[i][j] * 1;
-                        input += 1; 
+                        uni = (tecMat[i][j] - '0') * 1; //le resto '0' porque la variable me devuelve el codigo ASCII
+                        input += 1; //por lo que, haciendo eso, obtengo el valor original (como si lo casteara)
                     break;
                     case 1:
-                        dec = tecMat[i][j] * 10;
+                        dec = (tecMat[i][j] - '0') * 10;
                         input += 1;
                     break;
                     case 2:
-                        cen = tecMat[i][j] * 100;
+                        cen = (tecMat[i][j] - '0') * 100;
                         input = 0;
                     break;
                 }
                 max = uni + dec + cen;
-                if (ocupados > max){ //Si se ocupan todos los espacios, se bloquea la entrada a los nuevos
-                    GPIOB->BSRR |= (1 << ledRojo);
-                    GPIOB->BSRR |= ((1 << ledVerde) + 16);
-                }
             }
         }
     }
 }
 
-void estMod(char modo){
+int estMod(char modo){
+    modo=tolower(modo);//hace al switch case insensible a las mayusculas/minusculas
     switch(modo){
         case 'l':
+        //si esta libre, no se cuentan los autos que ingresan, por lo que solo prendo el led verde
             GPIOB->BSRR |= (1 << ledVerde);
             GPIOB->BSRR |= ((1 << ledRojo) + 16);
         break;
         case 'r':
+        //si esta reservado, no puede entrar ningun auto, independientemente de la capacidad maxima
             GPIOB->BSRR |= (1 << ledRojo);
             GPIOB->BSRR |= ((1 << ledVerde) + 16);
         break;
         case 'n':
-            teclado(f1, f2, f3, f4, c1, c2, c3, c4);
+        //en modo normal, el usuario ingresa la capacidad maxima del estacionamiento
+        //si se alcanza esa capacidad, el estacionamiento no admite mas autos
+            teclado(f[1], f[2], f[3], f[4], c[1], c[2], c[3], c[4]);
+            if(max <= ocupados){
+                GPIOB->BSRR |= (1 << ledRojo);
+                GPIOB->BSRR |= ((1 << ledVerde) + 16);
+            }
+            else{
+                GPIOB->BSRR |= (1 << ledVerde);
+                GPIOB->BSRR |= ((1 << ledRojo) + 16);
+            }
+            
         break;
     }
     
+}
+void EXTI0_IRQHandler(void){ //ISR del sensor 1
+    if(EXTI->PR & (1 << 0)){ //Sí se cumple con la interrupcion, 
+        ocupados++;
+        EXTI->PR |= (1 << 0);
+    }
+}
+void EXTI1_IRQHandler(void){//ISR del sensor 2
+    if(EXTI->PR & (1 << 1)){ //Sí se cumple con la interrupcion, 
+        ocupados--;
+        EXTI->PR |= (1 << 1);
+    }
+}
+void EXTI2_IRQHandler(void){//ISR del boton de normal
+    if(EXTI->PR & (1 << 2)){
+        mode = 'n'; 
+        EXTI->PR |= (1 << 2);
+    }
+}
+void EXTI3_IRQHandler(void){//ISR del boton de restringido
+    if(EXTI->PR & (1 << 3)){
+        mode = 'r'; 
+        EXTI->PR |= (1 << 3);
+    }
+}
+void EXTI4_IRQHandler(void){//ISR del boton de libre
+    if(EXTI->PR & (1 << 4)){
+        mode = 'l'; 
+        EXTI->PR |= (1 << 4);
+    }
 }
