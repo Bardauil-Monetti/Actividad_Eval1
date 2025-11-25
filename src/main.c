@@ -22,7 +22,7 @@ int main(void){
     AFIO->EXTICR[4] &= ~(0xF << ((libre % 4) * 4));//del EXTICR[4] en adelante, se declaran diferente a los anteriores 
     AFIO->EXTICR[4] |=  (0X2 << ((libre % 4) * 4));// 0X2 = PC (es el puerto en el que esta seteado el pin)
   
-
+    estInit();
     for(int i = 1; i < 5; i++){
         EXTI->IMR  |= (1 << i);
         EXTI->RTSR |= (1 << i);   
