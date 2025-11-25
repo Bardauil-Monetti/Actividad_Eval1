@@ -34,10 +34,10 @@ int main(void){
     NVIC_EnableIRQ(EXTI2_IRQn);
     NVIC_EnableIRQ(EXTI3_IRQn);
     NVIC_EnableIRQ(EXTI4_IRQn);
-    NVIC_SetPriority(EXTI3_IRQn, 0); //el boton de restringido es el de mayor prioridad
-    NVIC_SetPriority(EXTI2_IRQn, 1); //los botones de normal y libre tienen el mismo nivel de prioridad
-    NVIC_SetPriority(EXTI4_IRQn, 1);
-    NVIC_SetPriority(EXTI0_IRQn, 2);//los sensores estan un nivel debajo de los botones, ya que solo sensaran cuando el modo normal este activo
+    NVIC_SetPriority(EXTI4_IRQn, 0); //el boton de restringido es el de mayor prioridad
+    NVIC_SetPriority(EXTI3_IRQn, 1); //los botones de normal y libre tienen el mismo nivel de prioridad
+    NVIC_SetPriority(EXTI9_5_IRQn, 1);
+    NVIC_SetPriority(EXTI2_IRQn, 2);//los sensores estan un nivel debajo de los botones, ya que solo sensaran cuando el modo normal este activo
     NVIC_SetPriority(EXTI1_IRQn, 2);
     //PREGUNTA: ¿Se podria cambiar el nivel de prioridad de una interrupcion mediante, por ejemplo, un if? RTA: Si, se puede pero no es muy normal. Se recomienda no hacerlo. GetPriority sirve para eso tmb
     while (1){
