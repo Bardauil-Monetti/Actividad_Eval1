@@ -19,7 +19,7 @@ int main(void){
     AFIO->EXTICR[0] |=  (0x0 << (normal * 4));    
     AFIO->EXTICR[1] &= ~(0xF << (restringido * 4)); 
     AFIO->EXTICR[1] |=  (0x0 << (restringido * 4)); 
-    AFIO->EXTICR[1] &= ~(0xF << ((libre % 4) * 4));//del EXTICR[4] en adelante, se declaran diferente a los anteriores 
+    AFIO->EXTICR[1] &= ~(0xF << ((libre % 4) * 4));//del pin 4 en adelante, se declaran diferente a los anteriores 
     AFIO->EXTICR[1] |=  (0X2 << ((libre % 4) * 4));// 0X2 = PC (es el puerto en el que esta seteado el pin)
   
     estInit();
