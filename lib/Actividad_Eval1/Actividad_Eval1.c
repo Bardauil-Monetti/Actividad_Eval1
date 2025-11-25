@@ -48,7 +48,7 @@ void teclado(int f1, int f2, int f3, int f4, int c1, int c2, int c3, int c4){
     for(int i = 0; i < 4; i++){
         GPIOB->BSRR |= (1 << filas[i]);
         for(int j = 0; j < 4; j++){
-            if(GPIOB->IDR & (1 << columnas[j]) == 0){
+            if((GPIOB->IDR & (1 << columnas[j])) == 0){
                 switch(input){
                     case 0:
                         uni = (tecMat[i][j] - '0') * 1; //le resto '0' porque la variable me devuelve el codigo ASCII
@@ -64,9 +64,9 @@ void teclado(int f1, int f2, int f3, int f4, int c1, int c2, int c3, int c4){
                     break;
                 }
                 max = uni + dec + cen;
-            }
-        GPIOB->BSRR |= (1 << (filas[i] + 16));    
+            }    
         }
+    GPIOB->BSRR |= (1 << (filas[i] + 16));    
     }
 }
 
